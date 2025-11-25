@@ -1,0 +1,16 @@
+torch==2.6.0
+numpy==2.3.4
+pandas==2.3.3
+scikit-learn==1.7.2
+pyarrow==22.0.0
+openpyxl==3.1.5
+
+transformers==4.57.1
+rtdl_revisiting_models==0.0.2
+
+tqdm==4.67.1
+joblib==1.5.2
+optuna==4.6.0
+
+packaging==25.0
+pyyaml==6.0.3

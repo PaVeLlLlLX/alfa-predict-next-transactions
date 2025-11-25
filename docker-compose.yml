@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  alfa-solution:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: alfa-solution-img
+    container_name: alfa_container
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ./data:/code/data
+      - ./artifacts:/code/artifacts
+      - ./src:/code/src
+      - ./scripts:/code/scripts
+    shm_size: '16gb' 
+    command: tail -f /dev/null 
+    stdin_open: true
+    tty: true
