@@ -1,9 +1,8 @@
-# 🚀 Alfa-Bank Transaction Prediction | FT-Transformer SOTA
+# 🚀 Alfa-Bank Transaction Prediction | FT-Transformer
 
 ![Python](https://img.shields.io/badge/python-3.11-blue.svg)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.6.0-red.svg)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)
-![Metric](https://img.shields.io/badge/Hamming%20Score-0.4866-success)
 
 ## 🎯 Описание задачи
 Разработка модели Multi-Label классификации для предсказания категорий транзакций (MCC) клиента в следующем периоде. 
@@ -36,8 +35,8 @@
 ## 📂 Структура проекта
 
 ```text
-alfa-solution/
-├── Dockerfile             # Окружение (PyTorch 2.6, CUDA 12.4)
+alfa-predict-next-transactions/
+├── Dockerfile             # Окружение (PyTorch 2.6, CUDA 11.8)
 ├── docker-compose.yml     # Конфигурация запуска с GPU
 ├── run.sh                 # Единый скрипт запуска (One-click start)
 ├── data/                  # Исходные данные и маппинги
@@ -48,7 +47,7 @@ alfa-solution/
 │   ├── model.py              # Архитектура FTT и AsymmetricLoss
 │   └── utils.py              # Утилиты и метрики
 └── scripts/               # Исполняемые пайплайны
-    ├── 1_prepare.py          # Подготовка данных (SVD, Split)
+    ├── 1_prepare_data.py     # Подготовка данных (SVD, Split)
     ├── 2_train.py            # Обучение модели
     ├── 3_optimize.py         # Валидация и поиск порогов
     └── 4_predict.py          # Финальный инференс

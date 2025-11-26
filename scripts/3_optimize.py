@@ -29,7 +29,7 @@ def main():
     with open(config.VOCAB_PATH, 'r') as f: vocabs = json.load(f)
     encoder = dataset.CategoricalEncoder(vocabs)
     processor = dataset.DataProcessor(svd, mcc_dict)
-    cards = [len(vocabs[c]) + 1 for c in config.CAT_COLS]
+    cards = [len(vocabs[c]) for c in config.CAT_COLS]
     
     ftt = model.MultiLabelFTTransformer(len(config.NUM_COLS), cards).to(config.DEVICE)
     ftt.load_state_dict(torch.load(config.MODEL_CHECKPOINT, map_location=config.DEVICE))

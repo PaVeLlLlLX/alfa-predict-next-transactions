@@ -12,7 +12,7 @@
 ├── src/                    # Исходный код (dataset, model, config)
 ├── scripts/                # Исполняемые скрипты (prepare, train, predict)
 ├── data/                   # Папка для данных (монтируется в контейнер)
-└──  artifacts              # Папка для весов модели, словаря категорий и SVD
+└── artifacts               # Папка для весов модели, словаря категорий и SVD
 ```
 
 ---
@@ -57,7 +57,7 @@ chmod +x run.sh
 
 ### 1. Подготовка данных
 ```bash
-python scripts/1_prepare.py
+python scripts/1_prepare_data.py
 ```
 Создает: сплит данных, SVD-модель, словари категорий.
 
