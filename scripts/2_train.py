@@ -20,7 +20,7 @@ logger = utils.get_logger()
 def main():
     utils.seed_everything(config.SEED)
     
-    logger.info("Загрузка ресурсов...")
+    logger.info("Загрузка ресурсов")
     svd = joblib.load(config.SVD_PATH)
     mcc_map = pd.read_excel(config.MCC_MAP_PATH)
     mcc_dict = dict(zip(mcc_map["mcc"].astype(str), mcc_map["eng_cat"]))
@@ -29,13 +29,13 @@ def main():
     encoder = dataset.CategoricalEncoder(vocabs)
     processor = dataset.DataProcessor(svd, mcc_dict)
     
-    cards = [len(vocabs[c]) + 1 for c in config.CAT_COLS]
+    cards = [len(vocabs[c]) for c in config.CAT_COLS]
     logger.info(f"Cards: {cards}")
     
     train_ds = dataset.TabularStreamingDataset([config.TRAIN_FINAL], encoder, processor)
     train_loader = DataLoader(train_ds, batch_size=config.BATCH_SIZE, num_workers=4, pin_memory=True)
     
-    logger.info("Инициализация модели...")
+    logger.info("Инициализация модели")
     ftt = model.MultiLabelFTTransformer(len(config.NUM_COLS), cards).to(config.DEVICE)
     
     no_decay = ["bias", "LayerNorm.bias", "LayerNorm.weight"]
@@ -58,7 +58,7 @@ def main():
         num_training_steps=total_steps
     )
     
-    logger.info("Старт обучения на {config.EPOCHS} эпох.")
+    logger.info("Старт обучения на {config.EPOCHS} эпох")
     for epoch in range(config.EPOCHS):
         ftt.train()
         running_loss = 0

@@ -1,5 +1,6 @@
 import sys
 import os
+from typing import List, Dict
 sys.path.append(os.getcwd())
 
 import pandas as pd
@@ -18,9 +19,10 @@ from src import config, utils
 
 logger = utils.get_logger()
 
-def split_data():
+def split_data() -> None:
     logger.info("1. Сплит данных по времени (Train/Val)")
-    all_timestamps = []
+    all_timestamps: List[pd.DataFrame] = []
+
     for file_path in config.TRAIN_SOURCE:
         pf = pq.ParquetFile(file_path)
         for i in tqdm(range(pf.num_row_groups), desc=f"Reading timestamps {file_path}"):
@@ -33,11 +35,11 @@ def split_data():
     gc.collect()
 
     split_timestamp = timestamps_df['period_start'].quantile(0.9) # 1 - 0.1
-    logger.info(f"\n✓ Временная отсечка (90%): {split_timestamp}")
+    logger.info(f"\nВременная отсечка (90%): {split_timestamp}")
     del timestamps_df
     gc.collect()
 
-    logger.info("Подготовка схемы...")
+    logger.info("Подготовка схемы")
     pf_sample = pq.ParquetFile(config.TRAIN_SOURCE[0])
     df_sample = pf_sample.read_row_group(0).to_pandas()
     df_sample['period_start'] = pd.to_datetime(df_sample['period_start'], errors='coerce')
@@ -47,7 +49,7 @@ def split_data():
     if os.path.exists(config.TRAIN_FINAL): os.remove(config.TRAIN_FINAL)
     if os.path.exists(config.VAL_FINAL): os.remove(config.VAL_FINAL)
 
-    logger.info("Запись файлов...")
+    logger.info("Запись файлов")
     with pq.ParquetWriter(config.TRAIN_FINAL, schema=corrected_schema) as train_w, \
          pq.ParquetWriter(config.VAL_FINAL, schema=corrected_schema) as val_w:
         
@@ -67,14 +69,14 @@ def split_data():
                 del df_chunk, train_part, val_part
                 gc.collect()
 
-def train_svd():
-    logger.info("\n2. Обучение SVD...")
+def train_svd() -> None:
+    logger.info("\n2. Обучение SVD")
     pf = pq.ParquetFile(config.TRAIN_FINAL)
     df = pf.read_row_group(0, columns=['prev_mcc_seq']).to_pandas()
     if len(df) < config.SAMPLE_SIZE and pf.num_row_groups > 1:
         df = pd.concat([df, pf.read_row_group(1, columns=['prev_mcc_seq']).to_pandas()])
     
-    corpus = df['prev_mcc_seq'].fillna('').astype(str).tolist()
+    corpus: List[str] = df['prev_mcc_seq'].fillna('').astype(str).tolist()
     pipe = make_pipeline(
         TfidfVectorizer(token_pattern=r'\S+', ngram_range=(1, 1), max_features=5000),
         TruncatedSVD(n_components=config.N_SVD, random_state=42)
@@ -83,12 +85,12 @@ def train_svd():
     joblib.dump(pipe, config.SVD_PATH)
     logger.info(f"SVD сохранен: {config.SVD_PATH}")
 
-def build_vocab():
-    logger.info("\n3. Сбор словарей категорий...")
+def build_vocab() -> None:
+    logger.info("\n3. Сбор словарей категорий")
     mcc_map = pd.read_excel(config.MCC_MAP_PATH)
-    mcc_dict = dict(zip(mcc_map["mcc"].astype(str), mcc_map["eng_cat"]))
+    mcc_dict: Dict[str, str] = dict(zip(mcc_map["mcc"].astype(str), mcc_map["eng_cat"]))
     
-    counters = {c: Counter() for c in config.CAT_COLS}
+    counters: Dict[str, Counter] = {c: Counter() for c in config.CAT_COLS}
     files = [config.TRAIN_FINAL, config.VAL_FINAL]
     
     for f in files:
@@ -109,13 +111,16 @@ def build_vocab():
                     counters[col].update(df[col].fillna('__MISSING__').astype(str).values)
             del df
 
-    final_vocabs = {}
+    final_vocabs: Dict[str, List[str]] = {}
     limits = {"last_transition": 2000, "adminarea": 500, "default": 1000}
     
     for col in config.CAT_COLS:
         limit = limits.get(col, limits["default"])
         common = [val for val, _ in counters[col].most_common(limit)]
-        if "__MISSING__" in common: common.remove("__MISSING__")
+
+        if "__MISSING__" in common: 
+            common.remove("__MISSING__")
+            
         final_vocabs[col] = ["__MISSING__", "__RARE__"] + sorted(common)
     
     with open(config.VOCAB_PATH, 'w', encoding='utf-8') as f:

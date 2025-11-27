@@ -2,9 +2,11 @@ import torch
 import torch.nn as nn
 import rtdl_revisiting_models as rtdl
 import numpy as np
+from typing import List, Optional
+
 
 class MultiLabelFTTransformer(nn.Module):
-    def __init__(self, n_num_features, cat_cardinalities, n_classes=32):
+    def __init__(self, n_num_features: int, cat_cardinalities: List[int], n_classes: int = 32):
         super().__init__()
         
         self.ftt = rtdl.FTTransformer(
@@ -28,12 +30,12 @@ class MultiLabelFTTransformer(nn.Module):
         
         self.init_final_bias()
 
-    def init_final_bias(self, prob=0.05):
+    def init_final_bias(self, prob: float = 0.05):
         prior_prob = prob
         bias_value = -np.log((1 - prior_prob) / prior_prob)
         nn.init.constant_(self.classifier[-1].bias, bias_value)
 
-    def forward(self, x_num, x_cat):
+    def forward(self, x_num: torch.Tensor, x_cat: torch.Tensor) -> torch.Tensor:
         x = self.ftt(x_num, x_cat)
         logits = self.classifier(x)
         return logits
@@ -46,7 +48,7 @@ class AsymmetricLoss(nn.Module):
         self.clip = clip
         self.eps = eps
 
-    def forward(self, x, y):
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         x_sigmoid = torch.sigmoid(x)
         xs_pos = x_sigmoid
         xs_neg = 1 - x_sigmoid

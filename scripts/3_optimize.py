@@ -1,5 +1,6 @@
 import sys
 import os
+from typing import List, Tuple
 sys.path.append(os.getcwd())
 
 import torch
@@ -18,7 +19,7 @@ logger = utils.get_logger()
 device_str = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def main():
+def main() -> None:
     utils.seed_everything(config.SEED)
     
     logger.info("Загрузка ресурсов")
@@ -29,7 +30,7 @@ def main():
     with open(config.VOCAB_PATH, 'r') as f: vocabs = json.load(f)
     encoder = dataset.CategoricalEncoder(vocabs)
     processor = dataset.DataProcessor(svd, mcc_dict)
-    cards = [len(vocabs[c]) for c in config.CAT_COLS]
+    cards: List[int] = [len(vocabs[c]) for c in config.CAT_COLS]
     
     ftt = model.MultiLabelFTTransformer(len(config.NUM_COLS), cards).to(config.DEVICE)
     ftt.load_state_dict(torch.load(config.MODEL_CHECKPOINT, map_location=config.DEVICE))
@@ -39,7 +40,9 @@ def main():
     val_ds = dataset.TabularStreamingDataset([config.VAL_FINAL], encoder, processor)
     val_loader = DataLoader(val_ds, batch_size=config.BATCH_SIZE*2, num_workers=4)
     
-    val_preds_list, val_true_list = [], []
+    val_preds_list: List[np.ndarray] = []
+    val_true_list: List[np.ndarray] = []
+    
     val_len = math.ceil(pq.read_metadata(config.VAL_FINAL).num_rows / (config.BATCH_SIZE*2))
     
     with torch.no_grad():
@@ -83,7 +86,7 @@ def main():
             best_global_score = best_score_iter
             
         logger.info(f"Скор после цикла {cycle + 1}: {best_global_score:.5f}")
-    logger.info("\nИтоговые пороги:", current_thresholds)
+    logger.info(f"\nИтоговые пороги: {current_thresholds}")
 
     logger.info(f"Итоговые пороги сохранены в: {config.THRESHOLDS_PATH}")
     with open(config.THRESHOLDS_PATH, 'w') as f:

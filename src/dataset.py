@@ -4,23 +4,22 @@ import torch
 import gc
 from collections import Counter
 from torch.utils.data import IterableDataset
+from typing import List, Dict, Any, Optional, Iterator, Union
 import pyarrow.parquet as pq
 from src import config
 
 class CategoricalEncoder:
-    def __init__(self, vocabs):
-        self.mapping = {}
-        self.cardinalities = {}
+    def __init__(self, vocabs: Dict[str, List[str]]):
+        self.mapping: Dict[str, Dict[str, int]] = {}
         
         for col, vals in vocabs.items():
             # маппинг {Value: Index}
             self.mapping[col] = {v: i for i, v in enumerate(vals)}
-            self.cardinalities[col] = len(vals)
             
     def get_mapper(self, col):
         return self.mapping.get(col)
     
-    def encode_series(self, series, col_name):
+    def encode_series(self, series: pd.Series, col_name: str) -> np.ndarray:
         mapper = self.mapping.get(col_name)
         if mapper:
             rare_idx = mapper.get("__RARE__", 0)
@@ -30,19 +29,19 @@ class CategoricalEncoder:
 
 
 class DataProcessor:
-    def __init__(self, svd_pipeline, mcc_dict):
+    def __init__(self, svd_pipeline: Any, mcc_dict: Dict[str, str]):
         self.svd = svd_pipeline
         self.mcc_dict = mcc_dict
 
-    def process_chunk(self, df_chunk: pd.DataFrame):
-        raw_seqs = df_chunk['prev_mcc_seq'].fillna('').astype(str).tolist()
+    def process_chunk(self, df_chunk: pd.DataFrame) -> pd.DataFrame:
+        raw_seqs: List[str] = df_chunk['prev_mcc_seq'].fillna('').astype(str).tolist()
 
         seq_s = df_chunk['prev_mcc_seq'].fillna('').astype(str)
         seq = seq_s.str.split()
 
         del seq_s
         # Конвертация MCC → категории
-        def map_to_cat(lst):
+        def map_to_cat(lst: List[str]) -> List[str]:
             return [self.mcc_dict.get(x, "__UNK__") for x in lst]
 
         df_chunk['seq_cat'] = seq.apply(map_to_cat)
@@ -63,7 +62,7 @@ class DataProcessor:
         df_chunk['month_sin'] = np.sin(2 * np.pi * ps_month / 12).astype('float16')
         df_chunk['month_cos'] = np.cos(2 * np.pi * ps_month / 12).astype('float16')
 
-        def calc_share(lst, target_set):
+        def calc_share(lst: List[str], target_set: set) -> float:
             if not lst: return 0.0
             cnt = sum(1 for x in lst if x in target_set)
             return cnt / len(lst)
@@ -76,7 +75,7 @@ class DataProcessor:
         df_chunk['last_cat'] =  df_chunk['seq_cat'].apply(lambda lst: lst[-1] if lst else "__MISSING__")
 
         # Энтропия категорий
-        def entropy(lst):
+        def entropy(lst: List[str]) -> float:
             if not lst:
                 return 0.0
             cnt = Counter(lst)
@@ -86,9 +85,8 @@ class DataProcessor:
 
         df_chunk['cat_entropy'] = df_chunk['last_cat'].apply(entropy).astype('float16')
         df_chunk["cat_entropy"] = df_chunk["cat_entropy"] / 3.5 
-
-        # transition features 
-        def transitions(lst):
+ 
+        def transitions(lst: List[str]) -> str:
             if len(lst) < 2: return "__NONE__"
             return f"{lst[-2]}->{lst[-1]}"
 
@@ -119,7 +117,7 @@ class DataProcessor:
     
 
 class TabularStreamingDataset(IterableDataset):
-    def __init__(self, parquet_files, encoder, processor, is_test=False):
+    def __init__(self, parquet_files: List[str], encoder: CategoricalEncoder, processor: DataProcessor, is_test: bool = False):
         super().__init__()
         self.files = parquet_files
         self.encoder = encoder
@@ -132,7 +130,7 @@ class TabularStreamingDataset(IterableDataset):
         if is_test:
              self.cols_to_read = [c for c in self.cols_to_read if c != 'target']
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Dict[str, torch.Tensor]]:
         worker_info = torch.utils.data.get_worker_info()
         if worker_info is None:
             files_to_read = self.files

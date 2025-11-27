@@ -1,5 +1,6 @@
 import sys
 import os
+from typing import List
 sys.path.append(os.getcwd())
 
 import torch
@@ -16,7 +17,7 @@ from torch.amp import autocast
 logger = utils.get_logger()
 device_str = "cuda" if torch.cuda.is_available() else "cpu"
 
-def main():
+def main() -> None:
     utils.seed_everything(config.SEED)
     
     logger.info("Загрузка ресурсов")
@@ -51,7 +52,7 @@ def main():
     test_ds = dataset.TabularStreamingDataset([temp_file], encoder, processor, is_test=True)
     test_loader = DataLoader(test_ds, batch_size=config.BATCH_SIZE*2, num_workers=2)
     
-    test_preds_list = []
+    test_preds_list: List[np.ndarray] = []
     test_len = math.ceil(len(test_df) / (config.BATCH_SIZE*2))
     
     with torch.no_grad():

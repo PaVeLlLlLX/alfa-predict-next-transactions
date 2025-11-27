@@ -1,4 +1,4 @@
-# 🚀 Alfa-Bank Transaction Prediction: FT-Transformer Solution
+# 🚀 Alfa-Bank Transaction Prediction: FT-Transformer
 
 Это решение использует FT-Transformer для предсказания категорий транзакций.
 
@@ -21,8 +21,8 @@
 
 1. **OS:** Linux (Ubuntu 20.04+).
 2. **GPU:** NVIDIA GPU + драйверы (проверьте `nvidia-smi`).
-3. **Docker:** Установленный Docker Engine и Docker Compose.
-4. **NVIDIA Container Toolkit:** Обязательно для проброса GPU.
+3. **Docker:** установленный Docker Engine и Docker Compose.
+4. **NVIDIA Container Toolkit:** обязательно для проброса GPU.
 
 ### Быстрая установка NVIDIA Toolkit (если нет)
 ```bash
@@ -78,6 +78,12 @@ python scripts/3_optimize.py
 python scripts/4_predict.py
 ```
 Применяет пороги к тесту и создает submission.csv.
+
+### 5.  Генерация отчетов о важности признаков
+```bash
+python scripts/5_explain.py
+```
+Результаты появятся в папке artifacts/
 
 ---
 

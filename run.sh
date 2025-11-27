@@ -28,6 +28,8 @@ if [ $? -ne 0 ]; then
     echo "Ошибка сборки Docker образа."
     exit 1
 fi
+echo "Запуск тестов."
+docker compose run --rm alfa-solution pytest tests/
 
 echo "Контейнер запущен в фоне."
 
@@ -48,6 +50,9 @@ echo "   python scripts/3_optimize.py"
 echo ""
 echo "4. Финальный инференс и сабмит:"
 echo "   python scripts/4_predict.py"
+echo ""
+echo "5. Генерация отчетов о важности признаков:"
+echo "   python scripts/5_explain.py"
 echo ""
 echo "========================================================================"
 echo "Вход в контейнер..."
