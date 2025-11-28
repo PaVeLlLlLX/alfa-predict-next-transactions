@@ -83,7 +83,7 @@ class DataProcessor:
             vals = np.array([c/total for c in cnt.values()])
             return -np.sum(vals * np.log(vals + 1e-9))
 
-        df_chunk['cat_entropy'] = df_chunk['last_cat'].apply(entropy).astype('float16')
+        df_chunk['cat_entropy'] = df_chunk['seq_cat'].apply(entropy).astype('float32')
         df_chunk["cat_entropy"] = df_chunk["cat_entropy"] / 3.5 
  
         def transitions(lst: List[str]) -> str:
